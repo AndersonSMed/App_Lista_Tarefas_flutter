@@ -18,6 +18,21 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   List _toDoList = [];
 
+  final _toDoController = TextEditingController();
+
+  void _addToDo() {
+    Map<String, dynamic> _newToDo = Map();
+    if (_toDoController.text != "") {
+      _newToDo["title"] = _toDoController.text;
+      _toDoController.text = "";
+      _newToDo["ok"] = false;
+      setState(() {
+        _toDoList.add(_newToDo);
+      });
+      _saveData();
+    }
+  }
+
   Future<File> _getFile() async {
     final directory = await getApplicationDocumentsDirectory();
     return File("${directory.path}/data.json");
@@ -55,6 +70,7 @@ class _HomeState extends State<Home> {
                 children: <Widget>[
                   Expanded(
                     child: TextField(
+                      controller: _toDoController,
                       decoration: InputDecoration(
                           labelText: "Nova Tarefa",
                           labelStyle: TextStyle(color: Colors.blueAccent)),
@@ -64,9 +80,30 @@ class _HomeState extends State<Home> {
                     color: Colors.blueAccent,
                     child: Text("Add"),
                     textColor: Colors.white,
-                    onPressed: () => {},
+                    onPressed: () => {_addToDo()},
                   )
                 ],
+              ),
+            ),
+            Expanded(
+              child: ListView.builder(
+                padding: EdgeInsets.only(top: 10.0),
+                itemCount: _toDoList.length,
+                itemBuilder: (context, index) {
+                  return CheckboxListTile(
+                    title: Text(_toDoList[index]["title"]),
+                    value: _toDoList[index]["ok"],
+                    secondary: CircleAvatar(
+                      child: Icon(
+                          _toDoList[index]["ok"] ? Icons.check : Icons.error),
+                    ),
+                    onChanged: (bool value) {
+                      setState(() {
+                        _toDoList[index]["ok"] = value;
+                      });
+                    },
+                  );
+                },
               ),
             )
           ],
