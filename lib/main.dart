@@ -69,45 +69,70 @@ class _HomeState extends State<Home> {
       key: Key(DateTime.now().millisecondsSinceEpoch.toString()),
       background: Container(
         color: Colors.red,
-        child: Align(alignment: Alignment(-0.9, 0.0),
-          child: Icon(Icons.delete, color: Colors.white,),
+        child: Align(
+          alignment: Alignment(-0.9, 0.0),
+          child: Icon(
+            Icons.delete,
+            color: Colors.white,
+          ),
         ),
       ),
       direction: DismissDirection.startToEnd,
-        child: CheckboxListTile(
-      title: Text(_toDoList[index]["title"]),
-      value: _toDoList[index]["ok"],
-      secondary: CircleAvatar(
-        child: Icon(_toDoList[index]["ok"] ? Icons.check : Icons.error),
+      child: CheckboxListTile(
+        title: Text(_toDoList[index]["title"]),
+        value: _toDoList[index]["ok"],
+        secondary: CircleAvatar(
+          child: Icon(_toDoList[index]["ok"] ? Icons.check : Icons.error),
+        ),
+        onChanged: (bool value) {
+          setState(() {
+            _toDoList[index]["ok"] = value;
+          });
+        },
       ),
-      onChanged: (bool value) {
-        setState(() {
-          _toDoList[index]["ok"] = value;
-        });
-      },
-    ),
-    onDismissed: (direction) => {
-      setState((){
-        _lastRemoved = Map.from(_toDoList[index]);
-        _lastRemovedPosition = index;
-        _toDoList.removeAt(index);
-        _saveData();
-        final snackbar = SnackBar(
-          content: Text("Tarefa \"${_lastRemoved["text"]}\" removida"),
-          action: SnackBarAction(label: "Desfazer",
-          onPressed: () {
+      onDismissed: (direction) => {
             setState(() {
-              _toDoList.insert(_lastRemovedPosition, _lastRemoved);
+              _lastRemoved = Map.from(_toDoList[index]);
+              _lastRemovedPosition = index;
+              _toDoList.removeAt(index);
               _saveData();
-            });
-          },),
-          duration: Duration(seconds: 4),
-        );
+              final snackbar = SnackBar(
+                content: Text("Tarefa \"${_lastRemoved["text"]}\" removida"),
+                action: SnackBarAction(
+                  label: "Desfazer",
+                  onPressed: () {
+                    setState(() {
+                      _toDoList.insert(_lastRemovedPosition, _lastRemoved);
+                      _saveData();
+                    });
+                  },
+                ),
+                duration: Duration(seconds: 4),
+              );
 
-        Scaffold.of(context).showSnackBar(snackbar);
+              Scaffold.of(context).showSnackBar(snackbar);
+            })
+          },
+    );
+  }
 
-      })
-    },);
+  Future<Null> _refresh() async {
+    await Future.delayed(Duration(milliseconds: 500));
+
+    setState(() {
+      _toDoList.sort((a, b) {
+        if (a["ok"] && !b["ok"]) {
+          return 1;
+        } else if (!a["ok"] && b["ok"]) {
+          return 1;
+        } else {
+          return 0;
+        }
+      });
+      _saveData();
+    });
+
+    return null;
   }
 
   @override
@@ -142,12 +167,14 @@ class _HomeState extends State<Home> {
               ),
             ),
             Expanded(
+                child: RefreshIndicator(
               child: ListView.builder(
                 padding: EdgeInsets.only(top: 10.0),
                 itemCount: _toDoList.length,
                 itemBuilder: _buildItem,
               ),
-            )
+              onRefresh: _refresh,
+            ))
           ],
         ));
   }
